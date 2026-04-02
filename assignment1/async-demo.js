@@ -5,12 +5,19 @@ const fsPromises = require("fs/promises");
 // Write a sample file for demonstration
 
 // 1. Callback style
-fs.readFile(
+fs.writeFile(
   path.join(__dirname, "sample-files", "sample.txt"),
-  "utf8",
-  (err, data) => {
-    if (err) throw err;
-    console.log("Callback read:", data);
+  "Hello, async world!",
+  (err) => {
+    if (err) return err;
+    fs.readFile(
+      path.join(__dirname, "sample-files", "sample.txt"),
+      "utf8",
+      (err, data) => {
+        if (err) throw err;
+        console.log("Callback read: " + data);
+      }
+    );
   }
 );
 
@@ -44,7 +51,7 @@ const doFileOperation = async () => {
         }
       );
     });
-    console.log("Promise read:", filehandle);
+    console.log("Promise read: " + filehandle);
   } catch (err) {
     console.log("An Error Occured", err);
   }
@@ -57,7 +64,7 @@ const doAsyncFileOperation = async () => {
       path.join(__dirname, "sample-files", "sample.txt"),
       "utf8"
     );
-    console.log("Async/Await read: ", fileData);
+    console.log("Async/Await read: " + fileData);
   } catch (err) {
     console.log("An Error Occurred", err);
   }
