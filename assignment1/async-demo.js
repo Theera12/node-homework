@@ -51,7 +51,7 @@ const doFileOperation = async () => {
         }
       );
     });
-    console.log("Promise read: " + filehandle);
+    console.log("fs.promises read:" + filehandle);
   } catch (err) {
     console.log("An Error Occured", err);
   }

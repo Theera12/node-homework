@@ -39,10 +39,14 @@ fileOperation();
 // Streams for large files- log first 40 chars of each chunk
 const fileChunkOperation = async () => {
   try {
+    await fsPromises.writeFile(
+      path.join(__dirname, "sample-files", "largefile.txt"),
+      ""
+    );
     for (let i = 0; i < 100; i++) {
       await fsPromises.appendFile(
         path.join(__dirname, "sample-files", "largefile.txt"),
-        `This is a line in a large file`
+        `${i}-This is a line in a large file\n`
       );
     }
     const readStream = fs.createReadStream(
