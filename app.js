@@ -25,13 +25,9 @@ app.post("/testpost", (req, res) => {
   res.send("This is Post testing");
 });
 
-app.post("/api/users/register", (req, res) => {
-  const newUser = { ...req.body }; // this makes a copy
-  global.users.push(newUser);
-  global.user_id = newUser; // After the registration step, the user is set to logged on.
-  delete req.body.password;
-  res.status(201).json(req.body);
-});
+//route for handling register
+const { register } = require("./controllers/userController");
+app.post("/api/users/register", register);
 
 //middleware to handle not found page
 const caseNotFound = require("./middleware/not-found");
