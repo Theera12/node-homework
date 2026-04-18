@@ -22,12 +22,12 @@ app.get("/", (req, res) => {
 });
 
 app.post("/testpost", (req, res) => {
-  res.send("This is Post testing");
+  res.json({ message: "Testing Port" });
 });
 
-//route for handling register
-const { register } = require("./controllers/userController");
-app.post("/api/users/register", register);
+//route for handling user routes
+const userRouter = require("./routes/userRoutes");
+app.use("/api/users", userRouter);
 
 //middleware to handle not found page
 const caseNotFound = require("./middleware/not-found");
