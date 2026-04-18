@@ -1,5 +1,12 @@
+global.user_id = null;
+global.users = [];
+global.tasks = [];
+
 const express = require("express");
 const app = express();
+
+//middleware to get the body of post request
+app.use(express.json({ limit: "1kb" }));
 
 //logging middleware
 app.use((req, res, next) => {
@@ -16,6 +23,14 @@ app.get("/", (req, res) => {
 
 app.post("/testpost", (req, res) => {
   res.send("This is Post testing");
+});
+
+app.post("/api/users/register", (req, res) => {
+  const newUser = { ...req.body }; // this makes a copy
+  global.users.push(newUser);
+  global.user_id = newUser; // After the registration step, the user is set to logged on.
+  delete req.body.password;
+  res.status(201).json(req.body);
 });
 
 //middleware to handle not found page
