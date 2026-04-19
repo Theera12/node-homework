@@ -1,5 +1,12 @@
+global.user_id = null;
+global.users = [];
+global.tasks = [];
+
 const express = require("express");
 const app = express();
+
+//middleware to get the body of post request
+app.use(express.json({ limit: "1kb" }));
 
 //logging middleware
 app.use((req, res, next) => {
@@ -15,8 +22,12 @@ app.get("/", (req, res) => {
 });
 
 app.post("/testpost", (req, res) => {
-  res.send("This is Post testing");
+  res.json({ message: "Testing Port" });
 });
+
+//route for handling user routes
+const userRouter = require("./routes/userRoutes");
+app.use("/api/users", userRouter);
 
 //middleware to handle not found page
 const caseNotFound = require("./middleware/not-found");
