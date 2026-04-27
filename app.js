@@ -31,7 +31,7 @@ app.use("/api/users", userRouter);
 
 //protected routes
 const authMiddleware = require("./middleware/auth");
-const taskRouter = require("./routers/taskRoutes");
+const taskRouter = require("./routes/taskRoutes");
 app.use("/api/tasks", authMiddleware, taskRouter);
 
 //middleware to handle not found page
