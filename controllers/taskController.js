@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
-const { taskSchema } = require("./validation/taskSchema");
-const { patchTaskSchema } = require("./taskSchema");
+const { taskSchema } = require("../validation/taskSchema");
+const { patchTaskSchema } = require("../validation/taskSchema");
 
 //create unique id for each task (This is called closure)
 const taskCounter = (() => {
@@ -18,11 +18,12 @@ const create = (req, res) => {
   const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
 
   if (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
   } //validation for the task
   const newTask = {
     id: taskCounter(),
     userId: global.user_id.email,
+    isCompleted: false,
     ...value,
   };
   global.tasks.push(newTask);
@@ -38,11 +39,17 @@ const index = (req, res) => {
   const userTasks = global.tasks.filter(
     (task) => task.userId === global.user_id.email
   );
-  const sanitizedTasks = userTasks.map((task) => {
-    const { userId, ...sanitizedTask } = task;
-    return sanitizedTask;
-  });
-  return res.json(sanitizedTasks);
+  if (userTasks.length !== 0) {
+    const sanitizedTasks = userTasks.map((task) => {
+      const { userId, ...sanitizedTask } = task;
+      return sanitizedTask;
+    });
+    return res.status(StatusCodes.OK).json(sanitizedTasks);
+  } else {
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ message: "Task Not Found for user" });
+  }
 };
 
 //show a task
@@ -65,7 +72,7 @@ const show = (req, res) => {
 
   const { userId, ...sanitizedTask } = task;
 
-  return res.json(sanitizedTask);
+  return res.status(StatusCodes.OK).json(sanitizedTask);
 };
 
 //update a task
@@ -77,7 +84,7 @@ const update = (req, res) => {
   });
 
   if (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
   } //validation for patchtask
   const taskToFind = parseInt(req.params?.id); // if there are no params, the ? makes sure that you
   // get a null
@@ -93,12 +100,13 @@ const update = (req, res) => {
     return res
       .status(StatusCodes.NOT_FOUND)
       .json({ message: "That task was not found" });
+  } else {
+    Object.assign(updateTask, value);
+
+    //const { userId, ...sanitizedTask } = updateTask;
+
+    return res.status(200).json({ message: "Updated Successfully" });
   }
-  Object.assign(updateTask, value);
-
-  const { userId, ...sanitizedTask } = updateTask;
-
-  return res.json(sanitizedTask);
 };
 
 //delete a task
@@ -107,7 +115,7 @@ const deleteTask = (req, res) => {
   // get a null
   if (!taskToFind) {
     return res
-      .status(400)
+      .status(StatusCodes.BAD_REQUEST)
       .json({ message: "The task ID passed is not valid." });
   }
   const taskIndex = global.tasks.findIndex(
@@ -124,7 +132,7 @@ const deleteTask = (req, res) => {
   const { userId, ...task } = global.tasks[taskIndex];
   // pull userId out and keep a copy of everything else, so the response is sanitized
   global.tasks.splice(taskIndex, 1); // do the delete
-  return res.json(task); // return the deleted entry without its userId. The default status code, OK, is returned
+  return res.status(StatusCodes.OK).json(task); // return the deleted entry without its userId. The default status code, OK, is returned
 };
 
 module.exports = {

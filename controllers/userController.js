@@ -1,5 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const { userSchema } = require("./validation/userSchema");
+const { userSchema } = require("../validation/userSchema");
 
 //hashing password and storing
 const crypto = require("crypto");
@@ -20,7 +20,7 @@ async function comparePassword(inputPassword, storedHash) {
 }
 
 //register a new user
-const register = (req, res) => {
+const register = async (req, res) => {
   if (!req.body) req.body = {};
 
   const { error, value } = userSchema.validate(req.body, { abortEarly: false });
@@ -28,28 +28,43 @@ const register = (req, res) => {
   if (error) {
     return res.status(400).json({ message: error.message });
   } //validation
-  const newUser = { ...value }; // this makes a copy
+  //hashed password
+  const hashedPassword = await hashPassword(value.password);
+  const newUser = { name: value.name, email: value.email, hashedPassword }; // this makes a copy
   global.users.push(newUser);
   global.user_id = newUser; // After the registration step, the user is set to logged on.
   const userResponse = { ...newUser };
-  delete userResponse.password;
+  delete userResponse.hashedPassword;
   res.status(StatusCodes.CREATED).json(userResponse);
 };
 
-//logging on with the user
-const logon = (req, res) => {
+//logon with the user info
+const logon = async (req, res) => {
+  if (!req.body) req.body = {};
+
   const { email, password } = req.body;
+
   const user = global.users.find((r) => r.email === email);
 
-  if (user && user.password === password) {
-    global.user_id = user;
+  if (!user) {
     return res
-      .status(StatusCodes.OK)
-      .json({ name: user.name, email: user.email });
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "Authentication Failed" });
   }
+
+  const passwordMatch = await comparePassword(password, user.hashedPassword);
+
+  if (!passwordMatch) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "Authentication Failed" });
+  }
+
+  global.user_id = user.id;
+
   return res
-    .status(StatusCodes.UNAUTHORIZED)
-    .json({ message: "Authentication Failed" });
+    .status(StatusCodes.OK)
+    .json({ name: user.name, email: user.email });
 };
 
 //logoff the user

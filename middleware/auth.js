@@ -6,5 +6,5 @@ module.exports = (req, res, next) => {
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "unauthorized" });
   }
-  next();
+  return next();
 };
