@@ -1,4 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
+const { taskSchema } = require("./validation/taskSchema");
+const { patchTaskSchema } = require("./taskSchema");
 
 //create unique id for each task (This is called closure)
 const taskCounter = (() => {
@@ -11,10 +13,17 @@ const taskCounter = (() => {
 
 //create a task
 const create = (req, res) => {
+  if (!req.body) req.body = {};
+
+  const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  } //validation for the task
   const newTask = {
-    ...req.body,
     id: taskCounter(),
     userId: global.user_id.email,
+    ...value,
   };
   global.tasks.push(newTask);
   const { userId, ...sanitizedTask } = newTask;
@@ -61,6 +70,15 @@ const show = (req, res) => {
 
 //update a task
 const update = (req, res) => {
+  if (!req.body) req.body = {};
+
+  const { error, value } = patchTaskSchema.validate(req.body, {
+    abortEarly: false,
+  });
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  } //validation for patchtask
   const taskToFind = parseInt(req.params?.id); // if there are no params, the ? makes sure that you
   // get a null
   if (!taskToFind) {
@@ -76,7 +94,7 @@ const update = (req, res) => {
       .status(StatusCodes.NOT_FOUND)
       .json({ message: "That task was not found" });
   }
-  Object.assign(updateTask, req.body);
+  Object.assign(updateTask, value);
 
   const { userId, ...sanitizedTask } = updateTask;
 
