@@ -29,6 +29,11 @@ app.post("/testpost", (req, res) => {
 const userRouter = require("./routes/userRoutes");
 app.use("/api/users", userRouter);
 
+//protected routes
+const authMiddleware = require("./middleware/auth");
+const taskRouter = require("./routers/taskRoutes");
+app.use("/api/tasks", authMiddleware, taskRouter);
+
 //middleware to handle not found page
 const caseNotFound = require("./middleware/not-found");
 app.use(caseNotFound);
