@@ -61,10 +61,10 @@ app.use((err, req, res, next) => {
   if (statusCode >= 400 && statusCode < 500) {
     // 4xx errors: client errors (use console.warn)
     // This includes ValidationError (400), UnauthorizedError (401), NotFoundError (404)
-    console.warn(`WARN: ${err.name}`);
+    console.warn(`WARN: ${err.name}`, err.message);
   } else {
     // 5xx errors: server errors (use console.error)
-    console.error(`ERROR: Error`);
+    console.error(`ERROR: Error`, err.message);
   }
 
   // Send error response
