@@ -4,6 +4,8 @@ global.tasks = [];
 
 const express = require("express");
 const app = express();
+const authMiddleware = require("./middleware/auth");
+const taskRouter = require("./routes/taskRoutes");
 
 //middleware to get the body of post request
 app.use(express.json({ limit: "1kb" }));
@@ -30,8 +32,6 @@ const userRouter = require("./routes/userRoutes");
 app.use("/api/users", userRouter);
 
 //protected routes
-const authMiddleware = require("./middleware/auth");
-const taskRouter = require("./routes/taskRoutes");
 app.use("/api/tasks", authMiddleware, taskRouter);
 
 //middleware to handle not found page

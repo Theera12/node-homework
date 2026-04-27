@@ -1,3 +1,5 @@
+const { StatusCodes } = require("http-status-codes");
+
 //create unique id for each task (This is called closure)
 const taskCounter = (() => {
   let lastTaskNumber = 0;
@@ -66,7 +68,7 @@ const update = (req, res) => {
       .status(400)
       .json({ message: "The task ID passed is not valid." });
   }
-  const updateTask = global.tasks.findIndex(
+  const updateTask = global.tasks.find(
     (task) => task.id === taskToFind && task.userId === global.user_id.email
   );
   if (!updateTask) {
@@ -109,8 +111,8 @@ const deleteTask = (req, res) => {
 
 module.exports = {
   create,
-  deleteTask,
   index,
   show,
   update,
+  deleteTask,
 };

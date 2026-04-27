@@ -3,16 +3,16 @@ const express = require("express");
 const router = express.Router();
 const {
   create,
-  deleteTask,
   index,
   show,
   update,
+  deleteTask,
 } = require("../controllers/taskController");
 
-router.route("/api/tasks").post(create);
-router.route("/api/tasks").get(index);
-router.route("api/tasks/:id").get(show);
-router.route("api/tasks/:id").patch(update);
-router.route("api/tasks/:id").delete(deleteTask);
+router.route("/").post(create);
+router.route("/").get(index);
+router.route("/:id").get(show);
+router.route("/:id").patch(update);
+router.route("/:id").delete(deleteTask);
 
 module.exports = router;
