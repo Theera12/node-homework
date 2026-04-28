@@ -65,7 +65,7 @@ const logon = async (req, res) => {
       .json({ message: "Authentication Failed" });
   }
 
-  global.user_id = user.email;
+  global.user_id = user;
 
   return res
     .status(StatusCodes.OK)

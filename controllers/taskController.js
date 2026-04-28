@@ -103,8 +103,9 @@ const update = (req, res) => {
     Object.assign(updateTask, value);
 
     //const { userId, ...sanitizedTask } = updateTask;
+    const { userId, ...sanitizedTask } = updateTask;
 
-    return res.status(200).json({ message: "Updated Successfully" });
+    return res.status(StatusCodes.OK).json(sanitizedTask);
   }
 };
 
