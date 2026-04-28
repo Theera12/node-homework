@@ -23,7 +23,6 @@ const create = (req, res) => {
   const newTask = {
     id: taskCounter(),
     userId: global.user_id.email,
-    isCompleted: false,
     ...value,
   };
   global.tasks.push(newTask);
