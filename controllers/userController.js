@@ -28,13 +28,18 @@ const register = async (req, res) => {
   if (error) {
     return res.status(400).json({ message: error.message });
   } //validation
+
   //hashed password
   const hashedPassword = await hashPassword(value.password);
+
   const newUser = { name: value.name, email: value.email, hashedPassword }; // this makes a copy
+
   global.users.push(newUser);
   global.user_id = newUser; // After the registration step, the user is set to logged on.
+
   const userResponse = { ...newUser };
   delete userResponse.hashedPassword;
+
   res.status(StatusCodes.CREATED).json(userResponse);
 };
 
