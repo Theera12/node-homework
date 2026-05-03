@@ -6,6 +6,7 @@ GROUP BY o.order_id
 ORDER BY o.order_id 
 LIMIT 5;
 
+
 SELECT
     c.customer_name,
     AVG(t.total_price) AS average_order_price
