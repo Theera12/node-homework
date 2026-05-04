@@ -1,6 +1,6 @@
 global.user_id = null;
-global.users = [];
-global.tasks = [];
+//global.users = [];
+//global.tasks = [];
 
 const express = require("express");
 const app = express();

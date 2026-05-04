@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const { userSchema } = require("../validation/userSchema");
-const pool = require("./db/pg-pool");
+const pool = require("../db/pg-pool");
 
 //hashing password and storing
 const crypto = require("crypto");
@@ -33,7 +33,7 @@ const register = async (req, res, next) => {
   } //validation
   let user = null;
   //hashed password
-  const hashedPassword = await hashPassword(value.password);
+  value.hashed_password = await hashPassword(value.password);
   // the code to here is like the in-memory version
   try {
     user = await pool.query(
@@ -44,7 +44,7 @@ const register = async (req, res, next) => {
     // Set logged-in user
     global.user_id = user.rows[0].id;
 
-    return res.status(StatusCodes.CREATED).json({
+    return res.status(201).json({
       name: user.rows[0].name,
       email: user.rows[0].email,
     });
@@ -79,7 +79,7 @@ const logon = async (req, res) => {
     email,
   ]);
 
-  if (result.rows === 0) {
+  if (result.rows.length === 0) {
     return res
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "Authentication Failed" });
@@ -95,7 +95,7 @@ const logon = async (req, res) => {
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "Authentication Failed" });
   }
-
+  global.user_id = null;
   global.user_id = result.rows[0].id;
 
   return res
