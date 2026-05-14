@@ -35,10 +35,41 @@ const create = async (req, res) => {
 //get all task for logged in users
 
 const index = async (req, res) => {
+  // Parse pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Build where clause with optional search filter
+  const whereClause = { userId: global.user_id };
+
+  const getOrderBy = (query) => {
+    const validSortFields = [
+      "title",
+      "priority",
+      "createdAt",
+      "id",
+      "isCompleted",
+    ];
+    const sortBy = query.sortBy || "createdAt";
+    const sortDirection = query.sortDirection === "asc" ? "asc" : "desc";
+
+    if (validSortFields.includes(sortBy)) {
+      return { [sortBy]: sortDirection };
+    }
+    return { createdAt: "desc" }; // default fallback
+  };
+
+  if (req.query.find) {
+    whereClause.title = {
+      contains: req.query.find, // Matches %find% pattern
+      mode: "insensitive", // Case-insensitive search (ILIKE in PostgreSQL)
+    };
+  }
+
   const tasks = await prisma.task.findMany({
-    where: {
-      userId: global.user_id, // using global.user_id from auth
-    },
+    where: whereClause,
+
     select: {
       id: true,
       title: true,
@@ -52,6 +83,14 @@ const index = async (req, res) => {
         },
       },
     },
+    skip: skip,
+    take: limit,
+    orderBy: getOrderBy(req.query),
+  });
+
+  // Get total count for pagination metadata
+  const totalTasks = await prisma.task.count({
+    where: whereClause,
   });
 
   if (tasks.length === 0) {
@@ -60,7 +99,17 @@ const index = async (req, res) => {
     });
   }
 
-  return res.status(StatusCodes.OK).json(tasks);
+  // Build pagination object with complete metadata
+  const pagination = {
+    page,
+    limit,
+    total: totalTasks,
+    pages: Math.ceil(totalTasks / limit),
+    hasNext: page * limit < totalTasks,
+    hasPrev: page > 1,
+  };
+
+  return res.status(StatusCodes.OK).json(tasks, pagination);
 };
 
 //show a task
