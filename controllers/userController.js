@@ -61,7 +61,41 @@ const register = async (req, res, next) => {
     return next(e);
   }
 };
+//show all users
+const show = async (req, res) => {
+  const userId = parseInt(req.params.id);
 
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      Task: {
+        where: { isCompleted: false },
+        select: {
+          id: true,
+          title: true,
+          priority: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
+    },
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json(user);
+};
 //logon with the user info
 const logon = async (req, res) => {
   if (!req.body) req.body = {};
@@ -102,5 +136,6 @@ const logoff = (req, res) => {
 module.exports = {
   register,
   logon,
+  show,
   logoff,
 };
