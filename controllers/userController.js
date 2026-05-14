@@ -1,6 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
 const { userSchema } = require("../validation/userSchema");
-const pool = require("../db/pg-pool");
 const prisma = require("../db/prisma");
 
 //hashing password and storing
@@ -44,12 +43,7 @@ const register = async (req, res, next) => {
       data: { name, email, hashedPassword },
       select: { name: true, email: true, id: true }, // specify the column values to return
     });
-    // user = await pool.query(
-    // `INSERT INTO users (email, name, hashed_password)
-    //VALUES ($1, $2, $3) RETURNING id, email, name`,
-    //[value.email, value.name, value.hashed_password]
-    //); // note that you use a parameterized query
-    // Set logged-in user
+
     global.user_id = user.id;
 
     return res.status(201).json({
@@ -66,14 +60,6 @@ const register = async (req, res, next) => {
     }
     return next(e);
   }
-  //const newUser = { name: value.name, email: value.email, hashedPassword }; // this makes a copy
-
-  //global.users.push(newUser);
-  //global.user_id = newUser; // After the registration step, the user is set to logged on.
-
-  //const userResponse = { ...newUser };
-  //delete userResponse.hashedPassword;
-  //res.status(StatusCodes.CREATED).json(userResponse);
 };
 
 //logon with the user info
@@ -81,11 +67,6 @@ const logon = async (req, res) => {
   if (!req.body) req.body = {};
 
   let { email, password } = req.body;
-
-  //const user = global.users.find((r) => r.email === email);
-  //const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-  //email,
-  //]);
 
   email = email.toLowerCase(); // Joi validation always converts the email to lower case
   // but you don't want logon to fail if the user types mixed case

@@ -1,12 +1,9 @@
 global.user_id = null;
-//global.users = [];
-//global.tasks = [];
 
 const express = require("express");
 const app = express();
 const authMiddleware = require("./middleware/auth");
 const taskRouter = require("./routes/taskRoutes");
-const pool = require("./db/pg-pool");
 const prisma = require("./db/prisma");
 
 //middleware to get the body of post request
@@ -81,7 +78,6 @@ async function shutdown(code = 0) {
     await new Promise((resolve) => server.close(resolve));
     console.log("HTTP server closed.");
     // If you have DB connections, close them here
-    await pool.end();
     await prisma.$disconnect();
     console.log("Prisma disconnected");
   } catch (err) {
