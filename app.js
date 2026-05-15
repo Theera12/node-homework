@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const authMiddleware = require("./middleware/auth");
 const taskRouter = require("./routes/taskRoutes");
+const analyticsRouter = require("./routes/analyticsRoutes");
 const prisma = require("./db/prisma");
 
 //middleware to get the body of post request
@@ -32,6 +33,9 @@ app.use("/api/users", userRouter);
 
 //protected routes
 app.use("/api/tasks", authMiddleware, taskRouter);
+
+//Analytics Users
+app.use("/api/analytics", analyticsRouter);
 
 //db healthcheck
 app.get("/health", async (req, res) => {

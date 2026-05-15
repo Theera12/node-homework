@@ -24,7 +24,7 @@ const create = async (req, res) => {
   const { title, isCompleted } = value;
   const task = await prisma.task.create({
     data: { title, isCompleted, userId: global.user_id },
-    select: { title: true, isCompleted: true, id: true, priority }, // specify the column values to return
+    select: { title: true, isCompleted: true, id: true, priority: true }, // specify the column values to return
   });
 
   return res
