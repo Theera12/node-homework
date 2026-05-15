@@ -35,7 +35,7 @@ app.use("/api/users", userRouter);
 app.use("/api/tasks", authMiddleware, taskRouter);
 
 //Analytics Users
-app.use("/api/analytics", analyticsRouter);
+app.use("/api/analytics", authMiddleware, analyticsRouter);
 
 //db healthcheck
 app.get("/health", async (req, res) => {
