@@ -52,9 +52,9 @@ const userStatistics = async (req, res) => {
 
   // Return response with taskStats, recentTasks, and weeklyProgress
   res.status(200).json({
-    taskStats,
-    recentTasks,
-    weeklyProgress,
+    taskStats: taskStats,
+    recentTasks: recentTasks,
+    weeklyProgress: weeklyProgress,
   });
   return;
 };

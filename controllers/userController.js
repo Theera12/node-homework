@@ -39,26 +39,77 @@ const register = async (req, res, next) => {
   const { name, email, hashedPassword } = value;
   // the code to here is like the in-memory version
   try {
-    user = await prisma.user.create({
-      data: { name, email, hashedPassword },
-      select: { name: true, email: true, id: true }, // specify the column values to return
+    const result = await prisma.$transaction(async (tx) => {
+      // Create user account (similar to Assignment 6, but using tx instead of prisma)
+      const newUser = await tx.user.create({
+        data: { email, name, hashedPassword },
+        select: { id: true, email: true, name: true },
+      });
+
+      // Create 3 welcome tasks using createMany
+      const welcomeTaskData = [
+        {
+          title: "Complete your profile",
+          userId: newUser.id,
+          priority: "medium",
+        },
+        { title: "Add your first task", userId: newUser.id, priority: "high" },
+        { title: "Explore the app", userId: newUser.id, priority: "low" },
+      ];
+      await tx.task.createMany({ data: welcomeTaskData });
+
+      // Fetch the created tasks to return them
+      const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title: { in: welcomeTaskData.map((t) => t.title) },
+        },
+        select: {
+          id: true,
+          title: true,
+          isCompleted: true,
+          userId: true,
+          priority: true,
+        },
+      });
+
+      return { user: newUser, welcomeTasks };
     });
 
-    global.user_id = user.id;
+    // Store the user ID globally for session management (not secure for production)
+    global.user_id = result.user.id;
 
-    return res.status(201).json({
-      name: user.name,
-      email: user.email,
+    // Send response with status 201
+    res.status(201);
+    res.json({
+      user: result.user,
+      welcomeTasks: result.welcomeTasks,
+      transactionStatus: "success",
     });
-  } catch (e) {
-    // the email might already be registered
-    if (e.name === "PrismaClientKnownRequestError" && e.code === "P2002") {
+    return;
+    // user = await prisma.user.create({
+    // data: { name, email, hashedPassword },
+    //select: { name: true, email: true, id: true }, // specify the column values to return
+    //});
+
+    //global.user_id = user.id;
+
+    //return res.status(201).json({
+    //name: user.name,
+    //email: user.email,
+    //});
+  } catch (err) {
+    if (err.code === "P2002") {
+      // send the appropriate error back -- the email was already registered
+      return res.status(400).json({ error: "Email already registered" });
+      // the email might already be registered
+      /*if (e.name === "PrismaClientKnownRequestError" && e.code === "P2002") {
       // this means the unique constraint for email was violated
       return res.status(400).json({
         message: "Email already registered",
-      });
+      });*/
     }
-    return next(e);
+    return next(err);
   }
 };
 //show all users
