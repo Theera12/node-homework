@@ -1,15 +1,23 @@
 const prisma = require("../db/prisma");
 const { StatusCodes } = require("http-status-codes");
 
-const userStatistics = async (req, res) => {
+const getUserAnalytics = async (req, res) => {
   // Parse and validate user ID
   const userId = parseInt(req.params.id);
   if (isNaN(userId)) {
-    return res.status(StatusCodes.NOT_FOUND).json({
-      message: "That task was not found",
+    return res.status(400).json({
+      message: "Invalid ID",
     });
   }
 
+  const find = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!find) {
+    return res.status(404).json({
+      message: "User not found",
+    });
+  }
   // Use groupBy to count tasks by completion status
   const taskStats = await prisma.task.groupBy({
     by: ["isCompleted"],
@@ -60,7 +68,7 @@ const userStatistics = async (req, res) => {
 };
 
 //shows all users with their task statistics
-const userListWithTask = async (req, res) => {
+const getUsersWithStats = async (req, res) => {
   // Parse pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -112,7 +120,61 @@ const userListWithTask = async (req, res) => {
     pagination,
   });
 };
+
+//Task Search with Raw SQL
+const searchTasks = async (req, res) => {
+  const searchQuery = req.query.q;
+  // Validate search query
+  if (!searchQuery || searchQuery.trim().length < 2) {
+    return res.status(400).json({
+      error: "Search query must be at least 2 characters long",
+    });
+  }
+
+  // Get limit from query (default to 20)
+  const limit = req.query.limit || 20; //...parse from req.query
+
+  // Construct search patterns outside the query for proper parameterization
+  const searchPattern = `%${searchQuery}%`;
+  const exactMatch = searchQuery;
+  const startsWith = `${searchQuery}%`;
+
+  // Use raw SQL for complex text search with parameterized queries
+  const searchResults = await prisma.$queryRaw`
+  SELECT 
+    t.id,
+    t.title,
+    t.is_completed as "isCompleted",
+    t.priority,
+    t.created_at as "createdAt",
+    t.user_id as "userId",
+    u.name as "user_name"
+  FROM tasks t
+  JOIN users u ON t.user_id = u.id
+  WHERE t.title ILIKE ${searchPattern} 
+     OR u.name ILIKE ${searchPattern}
+  ORDER BY 
+    CASE 
+      WHEN t.title ILIKE ${exactMatch} THEN 1
+      WHEN t.title ILIKE ${startsWith} THEN 2
+      WHEN t.title ILIKE ${searchPattern} THEN 3
+      ELSE 4
+    END,
+    t.created_at DESC
+  LIMIT ${parseInt(limit)}
+`;
+
+  // Return results with query and count
+  // Hint: The test expects results array, query string, and count number
+  res.status(200).json({
+    // ... you need to return the response object
+    results: searchResults,
+    query: searchQuery,
+    count: searchResults.length,
+  });
+};
 module.exports = {
-  userStatistics,
-  userListWithTask,
+  getUserAnalytics,
+  getUsersWithStats,
+  searchTasks,
 };
