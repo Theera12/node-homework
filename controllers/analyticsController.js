@@ -132,7 +132,7 @@ const searchTasks = async (req, res) => {
   }
 
   // Get limit from query (default to 20)
-  const limit = req.query.limit || 20; //...parse from req.query
+  const limit = parseInt(req.query.limit) || 20; //...parse from req.query
 
   // Construct search patterns outside the query for proper parameterization
   const searchPattern = `%${searchQuery}%`;

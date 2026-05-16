@@ -43,7 +43,7 @@ const register = async (req, res, next) => {
       // Create user account (similar to Assignment 6, but using tx instead of prisma)
       const newUser = await tx.user.create({
         data: { email, name, hashedPassword },
-        select: { id: true, email: true, name: true },
+        select: { id: true, email: true, name: true, createdAt: true },
       });
 
       // Create 3 welcome tasks using createMany
@@ -51,10 +51,14 @@ const register = async (req, res, next) => {
         {
           title: "Complete your profile",
           userId: newUser.id,
-          priority: "medium",
+          isCompleted: false,
         },
-        { title: "Add your first task", userId: newUser.id, priority: "high" },
-        { title: "Explore the app", userId: newUser.id, priority: "low" },
+        {
+          title: "Add your first task",
+          userId: newUser.id,
+          isCompleted: false,
+        },
+        { title: "Explore the app", userId: newUser.id, isCompleted: false },
       ];
       await tx.task.createMany({ data: welcomeTaskData });
 
@@ -69,24 +73,21 @@ const register = async (req, res, next) => {
           title: true,
           isCompleted: true,
           userId: true,
-          priority: true,
         },
+        orderBy: { id: "asc" },
       });
 
       return { user: newUser, welcomeTasks };
     });
-
-    // Store the user ID globally for session management (not secure for production)
     global.user_id = result.user.id;
+    // Store the user ID globally for session management (not secure for production)
 
     // Send response with status 201
-    res.status(201);
-    res.json({
+    return res.status(201).json({
       user: result.user,
       welcomeTasks: result.welcomeTasks,
       transactionStatus: "success",
     });
-    return;
     // user = await prisma.user.create({
     // data: { name, email, hashedPassword },
     //select: { name: true, email: true, id: true }, // specify the column values to return
@@ -99,6 +100,7 @@ const register = async (req, res, next) => {
     //email: user.email,
     //});
   } catch (err) {
+    console.log("REGISTER ERROR:", err);
     if (err.code === "P2002") {
       // send the appropriate error back -- the email was already registered
       return res.status(400).json({ error: "Email already registered" });
