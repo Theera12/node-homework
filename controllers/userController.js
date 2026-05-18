@@ -88,28 +88,11 @@ const register = async (req, res, next) => {
       welcomeTasks: result.welcomeTasks,
       transactionStatus: "success",
     });
-    // user = await prisma.user.create({
-    // data: { name, email, hashedPassword },
-    //select: { name: true, email: true, id: true }, // specify the column values to return
-    //});
-
-    //global.user_id = user.id;
-
-    //return res.status(201).json({
-    //name: user.name,
-    //email: user.email,
-    //});
   } catch (err) {
     console.log("REGISTER ERROR:", err);
     if (err.code === "P2002") {
       // send the appropriate error back -- the email was already registered
       return res.status(400).json({ error: "Email already registered" });
-      // the email might already be registered
-      /*if (e.name === "PrismaClientKnownRequestError" && e.code === "P2002") {
-      // this means the unique constraint for email was violated
-      return res.status(400).json({
-        message: "Email already registered",
-      });*/
     }
     return next(err);
   }
