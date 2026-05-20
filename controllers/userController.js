@@ -39,29 +39,99 @@ const register = async (req, res, next) => {
   const { name, email, hashedPassword } = value;
   // the code to here is like the in-memory version
   try {
-    user = await prisma.user.create({
-      data: { name, email, hashedPassword },
-      select: { name: true, email: true, id: true }, // specify the column values to return
-    });
-
-    global.user_id = user.id;
-
-    return res.status(201).json({
-      name: user.name,
-      email: user.email,
-    });
-  } catch (e) {
-    // the email might already be registered
-    if (e.name === "PrismaClientKnownRequestError" && e.code === "P2002") {
-      // this means the unique constraint for email was violated
-      return res.status(400).json({
-        message: "Email already registered",
+    const result = await prisma.$transaction(async (tx) => {
+      // Create user account (similar to Assignment 6, but using tx instead of prisma)
+      const newUser = await tx.user.create({
+        data: { email, name, hashedPassword },
+        select: { id: true, email: true, name: true, createdAt: true },
       });
+
+      // Create 3 welcome tasks using createMany
+      const welcomeTaskData = [
+        {
+          title: "Complete your profile",
+          userId: newUser.id,
+          isCompleted: false,
+        },
+        {
+          title: "Add your first task",
+          userId: newUser.id,
+          isCompleted: false,
+        },
+        { title: "Explore the app", userId: newUser.id, isCompleted: false },
+      ];
+      await tx.task.createMany({ data: welcomeTaskData });
+
+      // Fetch the created tasks to return them
+      const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title: { in: welcomeTaskData.map((t) => t.title) },
+        },
+        select: {
+          id: true,
+          title: true,
+          isCompleted: true,
+          userId: true,
+        },
+        orderBy: { id: "asc" },
+      });
+
+      return { user: newUser, welcomeTasks };
+    });
+    global.user_id = result.user.id;
+    // Store the user ID globally for session management (not secure for production)
+
+    // Send response with status 201
+    return res.status(201).json({
+      user: result.user,
+      welcomeTasks: result.welcomeTasks,
+      transactionStatus: "success",
+    });
+  } catch (err) {
+    console.log("REGISTER ERROR:", err);
+    if (err.code === "P2002") {
+      // send the appropriate error back -- the email was already registered
+      return res.status(400).json({ error: "Email already registered" });
     }
-    return next(e);
+    return next(err);
   }
 };
+//show all users
+const show = async (req, res) => {
+  const userId = parseInt(req.params.id);
 
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      Task: {
+        where: { isCompleted: false },
+        select: {
+          id: true,
+          title: true,
+          priority: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
+    },
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json(user);
+};
 //logon with the user info
 const logon = async (req, res) => {
   if (!req.body) req.body = {};
@@ -102,5 +172,6 @@ const logoff = (req, res) => {
 module.exports = {
   register,
   logon,
+  show,
   logoff,
 };

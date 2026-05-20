@@ -21,10 +21,16 @@ const create = async (req, res) => {
   if (error) {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
   } //validation for the task
-  const { title, isCompleted } = value;
+
+  const { title, isCompleted, priority } = value;
   const task = await prisma.task.create({
-    data: { title, isCompleted, userId: global.user_id },
-    select: { title: true, isCompleted: true, id: true }, // specify the column values to return
+    data: {
+      title,
+      isCompleted,
+      priority: priority || "medium",
+      userId: global.user_id,
+    },
+    select: { title: true, isCompleted: true, id: true, priority: true }, // specify the column values to return
   });
 
   return res
@@ -35,11 +41,75 @@ const create = async (req, res) => {
 //get all task for logged in users
 
 const index = async (req, res) => {
+  // Parse pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  //const skip = (page - 1) * limit;
+
+  // validation
+  if (
+    (req.query.page && (isNaN(page) || page < 1)) ||
+    (req.query.limit && (isNaN(limit) || limit < 1 || limit > 100))
+  ) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Invalid pagination parameters",
+    });
+  }
+  const safePage = !isNaN(page) && page >= 1 ? page : 1;
+  const safeLimit = !isNaN(limit) && limit >= 1 && limit <= 100 ? limit : 10;
+
+  const skip = (safePage - 1) * safeLimit;
+  // Build where clause with optional search filter
+  const whereClause = { userId: global.user_id };
+
+  const getOrderBy = (query) => {
+    const validSortFields = [
+      "title",
+      "priority",
+      "createdAt",
+      "id",
+      "isCompleted",
+    ];
+    const sortBy = query.sortBy || "createdAt";
+    const sortDirection = query.sortDirection === "asc" ? "asc" : "desc";
+
+    if (validSortFields.includes(sortBy)) {
+      return { [sortBy]: sortDirection };
+    }
+    return { createdAt: "desc" }; // default fallback
+  };
+
+  if (req.query.find) {
+    whereClause.title = {
+      contains: req.query.find, // Matches %find% pattern
+      mode: "insensitive", // Case-insensitive search (ILIKE in PostgreSQL)
+    };
+  }
+
   const tasks = await prisma.task.findMany({
-    where: {
-      userId: global.user_id, // only the tasks for this user!
+    where: whereClause,
+
+    select: {
+      id: true,
+      title: true,
+      isCompleted: true,
+      priority: true,
+      createdAt: true,
+      User: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
     },
-    select: { title: true, isCompleted: true, id: true },
+    skip,
+    take: safeLimit,
+    orderBy: getOrderBy(req.query),
+  });
+
+  // Get total count for pagination metadata
+  const totalTasks = await prisma.task.count({
+    where: whereClause,
   });
 
   if (tasks.length === 0) {
@@ -48,7 +118,19 @@ const index = async (req, res) => {
     });
   }
 
-  return res.status(StatusCodes.OK).json(tasks);
+  // Build pagination object with complete metadata
+  const pagination = {
+    page: safePage,
+    limit: safeLimit,
+    total: totalTasks,
+    pages: Math.ceil(totalTasks / safeLimit),
+    hasNext: safePage * safeLimit < totalTasks,
+    hasPrev: safePage > 1,
+  };
+
+  return res
+    .status(StatusCodes.OK)
+    .json({ tasks: tasks, pagination: pagination });
 };
 
 //show a task
@@ -59,7 +141,15 @@ const show = async (req, res, next) => {
         userId: global.user_id,
         id: parseInt(req.params.id), // only the tasks for this user!
       },
-      select: { title: true, isCompleted: true, id: true },
+      include: {
+        User: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
     return res.status(StatusCodes.OK).json(task);
   } catch (err) {
@@ -91,7 +181,7 @@ const update = async (req, res, next) => {
         id,
         userId: global.user_id,
       },
-      select: { title: true, isCompleted: true, id: true },
+      select: { title: true, isCompleted: true, id: true, priority: true },
     });
     return res.status(StatusCodes.OK).json(task);
   } catch (err) {
@@ -105,6 +195,51 @@ const update = async (req, res, next) => {
   }
 };
 
+//Bulk task operation
+const bulkCreate = async (req, res, next) => {
+  const { tasks } = req.body;
+
+  // Validate the tasks array
+  if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
+    return res.status(400).json({
+      error: "Invalid request data. Expected an array of tasks.",
+    });
+  }
+
+  // Validate all tasks before insertion
+  const validTasks = [];
+  for (const task of tasks) {
+    const { error, value } = taskSchema.validate(task);
+    if (error) {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: error.details,
+      });
+    }
+    validTasks.push({
+      title: value.title,
+      isCompleted: value.isCompleted || false,
+      priority: value.priority || "medium",
+      userId: global.user_id,
+    });
+  }
+
+  // Use createMany for batch insertion
+  try {
+    const result = await prisma.task.createMany({
+      data: validTasks,
+      skipDuplicates: false,
+    });
+
+    res.status(201).json({
+      message: "success!",
+      tasksCreated: result.count,
+      totalRequested: validTasks.length,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
 //delete a task
 const deleteTask = async (req, res, next) => {
   const id = parseInt(req.params.id);
@@ -115,9 +250,10 @@ const deleteTask = async (req, res, next) => {
         id,
         userId: global.user_id,
       },
+      select: { title: true, isCompleted: true, id: true, priority: true },
     });
 
-    return res.sendStatus(StatusCodes.OK);
+    return res.sendStatus(StatusCodes.OK).json(task);
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -132,5 +268,6 @@ module.exports = {
   index,
   show,
   update,
+  bulkCreate,
   deleteTask,
 };
