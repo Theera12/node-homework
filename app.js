@@ -24,11 +24,6 @@ app.use(helmet());
 
 app.use(cookieParser());
 
-//middleware to get the body of post request
-app.use(express.json({ limit: "1kb" }));
-
-app.use(xss());
-
 //logging middleware
 app.use((req, res, next) => {
   console.log(req.method);
@@ -36,6 +31,11 @@ app.use((req, res, next) => {
   console.log(req.query);
   next();
 });
+
+//middleware to get the body of post request
+app.use(express.json({ limit: "1kb" }));
+
+app.use(xss());
 
 //get route
 app.get("/", (req, res) => {

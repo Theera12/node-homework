@@ -3,17 +3,9 @@ const { taskSchema } = require("../validation/taskSchema");
 const { patchTaskSchema } = require("../validation/taskSchema");
 const prisma = require("../db/prisma");
 
-//create unique id for each task (This is called closure)
-const taskCounter = (() => {
-  let lastTaskNumber = 0;
-  return () => {
-    lastTaskNumber += 1;
-    return lastTaskNumber;
-  };
-})();
-
 //create a task
 const create = async (req, res) => {
+  //console.log(req.user.id);
   if (!req.body) req.body = {};
 
   const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
@@ -32,7 +24,7 @@ const create = async (req, res) => {
     },
     select: { title: true, isCompleted: true, id: true, priority: true }, // specify the column values to return
   });
-
+  //console.log(task);
   return res
     .status(StatusCodes.CREATED) // 201 for create
     .json(task);
