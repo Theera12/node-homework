@@ -1,6 +1,26 @@
 const { StatusCodes } = require("http-status-codes");
 const { userSchema } = require("../validation/userSchema");
 const prisma = require("../db/prisma");
+const { randomUUID } = require("crypto");
+const jwt = require("jsonwebtoken");
+
+const cookieFlags = (req) => {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // only when HTTPS is available
+    sameSite: "Strict",
+  };
+};
+
+const setJwtCookie = (req, res, user) => {
+  //console.log(req, res, user);
+  // Sign JWT
+  const payload = { id: user.id, csrfToken: randomUUID() };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" }); // 1 hour expiration
+  // Set cookie.  Note that the cookie flags have to be different in production and in test.
+  res.cookie("jwt", token, { ...cookieFlags(req), maxAge: 3600000 }); // 1 hour expiration
+  return payload.csrfToken; // this is needed in the body returned by logon() or register()
+};
 
 //hashing password and storing
 const crypto = require("crypto");
@@ -79,6 +99,8 @@ const register = async (req, res, next) => {
 
       return { user: newUser, welcomeTasks };
     });
+    const csrfToken = setJwtCookie(req, res, result.user);
+    //console.log(csrfToken);
     global.user_id = result.user.id;
     // Store the user ID globally for session management (not secure for production)
 
@@ -87,6 +109,7 @@ const register = async (req, res, next) => {
       user: result.user,
       welcomeTasks: result.welcomeTasks,
       transactionStatus: "success",
+      csrfToken: csrfToken,
     });
   } catch (err) {
     console.log("REGISTER ERROR:", err);
@@ -156,17 +179,19 @@ const logon = async (req, res) => {
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "Authentication Failed" });
   }
+  const csrfToken = setJwtCookie(req, res, user);
   global.user_id = null;
   global.user_id = user.id;
 
   return res
     .status(StatusCodes.OK)
-    .json({ name: user.name, email: user.email });
+    .json({ name: user.name, email: user.email, csrfToken: csrfToken });
 };
 
 //logoff the user
 const logoff = (req, res) => {
   global.user_id = null;
+  res.clearCookie("jwt", cookieFlags(req));
   res.sendStatus(StatusCodes.OK);
 };
 module.exports = {

@@ -2,13 +2,32 @@ global.user_id = null;
 
 const express = require("express");
 const app = express();
-const authMiddleware = require("./middleware/auth");
+//const authMiddleware = require("./middleware/auth");
 const taskRouter = require("./routes/taskRoutes");
 const analyticsRouter = require("./routes/analyticsRoutes");
 const prisma = require("./db/prisma");
+const cookieParser = require("cookie-parser");
+
+app.set("trust proxy", 1);
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+const rateLimiter = require("express-rate-limit");
+
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+  })
+);
+
+app.use(helmet());
+
+app.use(cookieParser());
 
 //middleware to get the body of post request
 app.use(express.json({ limit: "1kb" }));
+
+app.use(xss());
 
 //logging middleware
 app.use((req, res, next) => {
@@ -32,10 +51,12 @@ const userRouter = require("./routes/userRoutes");
 app.use("/api/users", userRouter);
 
 //protected routes
-app.use("/api/tasks", authMiddleware, taskRouter);
+//app.use("/api/tasks", authMiddleware, taskRouter);
+app.use("/api/tasks", taskRouter);
 
 //Analytics Users
-app.use("/api/analytics", authMiddleware, analyticsRouter);
+//app.use("/api/analytics", authMiddleware, analyticsRouter);
+app.use("/api/analytics", analyticsRouter);
 
 //db healthcheck
 app.get("/health", async (req, res) => {
