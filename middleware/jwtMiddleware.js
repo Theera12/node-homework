@@ -6,7 +6,6 @@ const send401 = (res) => {
     .status(StatusCodes.UNAUTHORIZED)
     .json({ message: "No user is authenticated." });
 };
-
 module.exports = async (req, res, next) => {
   const token = req?.cookies?.jwt;
   if (!token) {
