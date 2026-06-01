@@ -101,7 +101,7 @@ const register = async (req, res, next) => {
     });
     const csrfToken = setJwtCookie(req, res, result.user);
     //console.log(csrfToken);
-    global.user_id = result.user.id;
+    // global.user_id = result.user.id;
     // Store the user ID globally for session management (not secure for production)
 
     // Send response with status 201
@@ -180,8 +180,8 @@ const logon = async (req, res) => {
       .json({ message: "Authentication Failed" });
   }
   const csrfToken = setJwtCookie(req, res, user);
-  global.user_id = null;
-  global.user_id = user.id;
+  //global.user_id = null;
+  //global.user_id = user.id;
 
   return res
     .status(StatusCodes.OK)
@@ -190,7 +190,7 @@ const logon = async (req, res) => {
 
 //logoff the user
 const logoff = (req, res) => {
-  global.user_id = null;
+  //global.user_id = null;
   res.clearCookie("jwt", cookieFlags(req));
   res.sendStatus(StatusCodes.OK);
 };
