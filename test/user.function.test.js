@@ -28,29 +28,16 @@ describe("register a user ", () => {
   });
 
   it("47. Registration returns an object with the expected name.", async () => {
-    const newUser = {
-      name: "Johns Deere",
-      email: "jdeer@example.com",
-      password: "Pa$$word20",
-    };
-    saveRes = await agent.post("/api/users/register").send(newUser);
-    expect(saveRes.body.user.name).toBe("Johns Deere");
+    expect(saveRes.body.user.name).toBe("John Deere");
   });
 
   it("48. Test that the returned object includes a csrfToken.", async () => {
-    const newUser = {
-      name: "Johns",
-      email: "deer@example.com",
-      password: "Pa$$word20",
-    };
-    saveRes = await agent.post("/api/users/register").send(newUser);
-    csrfToken = saveRes.body.csrfToken;
     expect(saveRes.body.csrfToken).toBeDefined();
   });
 
   it("49. You can logon as the newly registered user.", async () => {
     const newUser = {
-      email: "deer@example.com",
+      email: "jdeere@example.com",
       password: "Pa$$word20",
     };
     loginRes = await agent.post("/api/users/logon").send(newUser);
