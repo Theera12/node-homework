@@ -36,9 +36,9 @@ app.use(express.json({ limit: "1mb" }));
 app.use(xss());
 
 //get route
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
-});
+//app.get("/", (req, res) => {
+//res.send("Hello, World!");
+//});
 
 app.post("/testpost", (req, res) => {
   res.json({ message: "Testing Port" });
