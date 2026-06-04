@@ -31,7 +31,7 @@ app.use((req, res, next) => {
 });
 
 //middleware to get the body of post request
-app.use(express.json({ limit: "1kb" }));
+app.use(express.json({ limit: "1mb" }));
 
 app.use(xss());
 

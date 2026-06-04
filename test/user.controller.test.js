@@ -21,12 +21,14 @@ function MockResponseWithCookies() {
   res.cookie = (name, value, options = {}) => {
     const serialized = cookie.serialize(name, String(value), options);
     let currentHeader = res.getHeader("Set-Cookie");
+
     if (currentHeader === undefined) {
       currentHeader = [];
     }
     currentHeader.push(serialized);
     res.setHeader("Set-Cookie", currentHeader);
   };
+
   return res;
 }
 
@@ -46,8 +48,13 @@ describe("testing logon, register, and logoff", () => {
   it("33. A user can be registered.", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
-      body: { name: "Bob", email: "bob@sample.com", password: "Pa$$word20" },
+      body: {
+        name: "Bob",
+        email: "bob@sample.com",
+        password: "Pa$$word20",
+      },
     });
+    req.headers["X-Recaptcha-Test"] = process.env.RECAPTCHA_BYPASS;
     saveRes = MockResponseWithCookies();
     await waitForRouteHandlerCompletion(register, req, saveRes);
     expect(saveRes.statusCode).toBe(201); // success!
@@ -112,6 +119,7 @@ describe("testing logon, register, and logoff", () => {
       method: "POST",
       body: { name: "Bob", email: "bob@sample.com", password: "Pa$$word20" },
     });
+    req.headers["X-Recaptcha-Test"] = process.env.RECAPTCHA_BYPASS;
     saveRes = MockResponseWithCookies();
     await waitForRouteHandlerCompletion(register, req, saveRes);
     expect(saveRes.statusCode).toBe(400);
