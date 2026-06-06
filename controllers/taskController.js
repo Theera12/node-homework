@@ -250,7 +250,7 @@ const deleteTask = async (req, res, next) => {
       select: { title: true, isCompleted: true, id: true, priority: true },
     });
 
-    return res.sendStatus(StatusCodes.OK).json(task);
+    return res.status(StatusCodes.OK).json(task);
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(StatusCodes.NOT_FOUND).json({
