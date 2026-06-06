@@ -1,5 +1,3 @@
-global.user_id = null;
-
 const express = require("express");
 const app = express();
 //const authMiddleware = require("./middleware/auth");
