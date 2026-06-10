@@ -10,6 +10,8 @@ const {
   create,
   update,
   deleteTask,
+  bulkDelete,
+  bulkUpdateWithIds,
 } = require("../controllers/taskController");
 
 // a few useful globals
@@ -227,6 +229,75 @@ describe("testing the update and delete of tasks", () => {
     expect(saveRes.statusCode).toBe(404);
   });
 });
+
+describe("Testing Delete Multiple Tasks", () => {
+  it("a.should delete multiple tasks", async () => {
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: {
+        taskIds: [1, 2, 3],
+      },
+    });
+    req.user = {
+      id: 1,
+    };
+
+    saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    await waitForRouteHandlerCompletion(bulkDelete, req, saveRes);
+    expect(saveRes.statusCode).toBe(200);
+  });
+  it("b.should return 400 when taskIds is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: {
+        taskIds: [],
+      },
+    });
+
+    saveRes = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkDelete, req, saveRes);
+
+    expect(saveRes.statusCode).toBe(400);
+  });
+});
+
+describe("Testing Update Multiple Tasks", () => {
+  it("a.should update multiple tasks", async () => {
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: {
+        taskIds: [1, 2, 3],
+      },
+    });
+    req.user = {
+      id: 1,
+    };
+
+    saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, saveRes);
+    expect(saveRes.statusCode).toBe(200);
+  });
+
+  it("b.should return 400 when taskIds is missing", async () => {
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: {
+        taskIds: [],
+      },
+    });
+    req.user = {
+      id: 1,
+    };
+    req.body = { isCompleted: true };
+    saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, saveRes);
+    expect(saveRes.statusCode).toBe(400);
+  });
+});
+
 afterAll(() => {
   prisma.$disconnect();
 });
