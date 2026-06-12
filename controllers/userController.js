@@ -3,6 +3,12 @@ const { userSchema } = require("../validation/userSchema");
 const prisma = require("../db/prisma");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
 
 const cookieFlags = (req) => {
   return {
@@ -40,6 +46,94 @@ async function comparePassword(inputPassword, storedHash) {
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
 }
 
+//google logon
+const googleLogon = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    console.log(code);
+
+    if (!code) {
+      return res.status(400).json({ error: "No credential provided" });
+    }
+
+    const { tokens } = await client.getToken(code);
+
+    console.log(tokens);
+
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+    console.log(email);
+    console.log(name);
+
+    let user = await prisma.user.findUnique({
+      where: { email: email },
+    });
+    if (!user) {
+      const result = await prisma.$transaction(async (tx) => {
+        // Create user account (similar to Assignment 6, but using tx instead of prisma)
+        const newUser = await tx.user.create({
+          data: { email, name, hashedPassword: "hashedGoogleUser" },
+          select: { id: true, email: true, name: true, createdAt: true },
+        });
+
+        // Create 3 welcome tasks using createMany
+        const welcomeTaskData = [
+          {
+            title: "Complete your profile",
+            userId: newUser.id,
+            isCompleted: false,
+          },
+          {
+            title: "Add your first task",
+            userId: newUser.id,
+            isCompleted: false,
+          },
+          { title: "Explore the app", userId: newUser.id, isCompleted: false },
+        ];
+        await tx.task.createMany({ data: welcomeTaskData });
+
+        // Fetch the created tasks to return them
+        const welcomeTasks = await tx.task.findMany({
+          where: {
+            userId: newUser.id,
+            title: { in: welcomeTaskData.map((t) => t.title) },
+          },
+          select: {
+            id: true,
+            title: true,
+            isCompleted: true,
+            userId: true,
+          },
+          orderBy: { id: "asc" },
+        });
+
+        return { user: newUser, welcomeTasks };
+      });
+      const csrfToken = setJwtCookie(req, res, result.user);
+      return res.status(201).json({
+        user: result.user,
+        welcomeTasks: result.welcomeTasks,
+        transactionStatus: "success",
+        csrfToken: csrfToken,
+      });
+    } else {
+      const csrfToken = setJwtCookie(req, res, user);
+      return res.status(201).json({
+        user: user,
+        csrfToken: csrfToken,
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
 //register a new user
 const register = async (req, res, next) => {
   if (!req.body) req.body = {};
@@ -137,10 +231,6 @@ const register = async (req, res, next) => {
       return { user: newUser, welcomeTasks };
     });
     const csrfToken = setJwtCookie(req, res, result.user);
-    //console.log(csrfToken);
-    // global.user_id = result.user.id;
-    // Store the user ID globally for session management (not secure for production)
-
     // Send response with status 201
     return res.status(201).json({
       user: result.user,
@@ -236,4 +326,5 @@ module.exports = {
   logon,
   show,
   logoff,
+  googleLogon,
 };
