@@ -318,6 +318,7 @@ module.exports = {
   create,
   index,
   show,
+  bulkCreate,
   bulkDelete,
   update,
   bulkCreate,

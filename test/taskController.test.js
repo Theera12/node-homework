@@ -10,6 +10,7 @@ const {
   create,
   update,
   deleteTask,
+  bulkCreate,
   bulkDelete,
   bulkUpdateWithIds,
 } = require("../controllers/taskController");
@@ -230,74 +231,290 @@ describe("testing the update and delete of tasks", () => {
   });
 });
 
-describe("Testing Delete Multiple Tasks", () => {
-  it("a.should delete multiple tasks", async () => {
+// describe("Testing Delete Multiple Tasks", () => {
+//   it("a.should delete multiple tasks", async () => {
+//     const req = httpMocks.createRequest({
+//       method: "DELETE",
+//       body: {
+//         taskIds: [1, 2, 3],
+//       },
+//     });
+//     req.user = {
+//       id: 1,
+//     };
+
+//     saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
+//     await waitForRouteHandlerCompletion(bulkDelete, req, saveRes);
+//     expect(saveRes.statusCode).toBe(200);
+//   });
+//   it("b.should return 400 when taskIds is empty", async () => {
+//     const req = httpMocks.createRequest({
+//       method: "DELETE",
+//       body: {
+//         taskIds: [],
+//       },
+//     });
+
+//     saveRes = httpMocks.createResponse({
+//       eventEmitter: EventEmitter,
+//     });
+
+//     await waitForRouteHandlerCompletion(bulkDelete, req, saveRes);
+
+//     expect(saveRes.statusCode).toBe(400);
+//   });
+// });
+
+// describe("Testing Update Multiple Tasks", () => {
+//   it("a.should update multiple tasks", async () => {
+//     const req = httpMocks.createRequest({
+//       method: "PATCH",
+//       body: {
+//         taskIds: [1, 2, 3],
+//       },
+//     });
+//     req.user = {
+//       id: 1,
+//     };
+
+//     saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
+//     await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, saveRes);
+//     expect(saveRes.statusCode).toBe(200);
+//   });
+
+//   it("b.should return 400 when taskIds is missing", async () => {
+//     const req = httpMocks.createRequest({
+//       method: "PATCH",
+//       body: {
+//         taskIds: [],
+//       },
+//     });
+//     req.user = {
+//       id: 1,
+//     };
+//     req.body = { isCompleted: true };
+//     saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
+//     await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, saveRes);
+//     expect(saveRes.statusCode).toBe(400);
+//   });
+// });
+
+describe("Bulk Create Tasks", () => {
+  it("a.should create multiple tasks for a valid user", async () => {
     const req = httpMocks.createRequest({
-      method: "DELETE",
+      method: "POST",
       body: {
-        taskIds: [1, 2, 3],
+        tasks: [{ title: "task A" }, { title: "task B" }, { title: "task C" }],
       },
     });
-    req.user = {
-      id: 1,
-    };
 
-    saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
-    await waitForRouteHandlerCompletion(bulkDelete, req, saveRes);
-    expect(saveRes.statusCode).toBe(200);
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+
+    await waitForRouteHandlerCompletion(bulkCreate, req, res);
+
+    expect(res.statusCode).toBe(201);
+
+    const data = res._getJSONData();
+
+    expect(data.message).toBe("success!");
+    expect(data.tasksCreated).toBe(3);
+    expect(data.totalRequested).toBe(3);
   });
-  it("b.should return 400 when taskIds is empty", async () => {
+
+  it("b.should return 400 if tasks array is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { tasks: [] },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+
+    await waitForRouteHandlerCompletion(bulkCreate, req, res);
+
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("Bulk Delete Tasks ", () => {
+  let task1, task2, task3;
+
+  beforeEach(async () => {
+    task1 = await prisma.Task.create({
+      data: { title: "task1", userId: user1.id },
+    });
+
+    task2 = await prisma.Task.create({
+      data: { title: "task2", userId: user1.id },
+    });
+
+    task3 = await prisma.Task.create({
+      data: { title: "task3", userId: user1.id },
+    });
+  });
+
+  it("a.should delete multiple tasks using valid taskIds", async () => {
     const req = httpMocks.createRequest({
       method: "DELETE",
       body: {
-        taskIds: [],
+        taskIds: [task1.id, task2.id, task3.id], // ✅ real ids
       },
     });
 
-    saveRes = httpMocks.createResponse({
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
       eventEmitter: EventEmitter,
     });
 
-    await waitForRouteHandlerCompletion(bulkDelete, req, saveRes);
+    await waitForRouteHandlerCompletion(bulkDelete, req, res);
 
-    expect(saveRes.statusCode).toBe(400);
+    expect(res.statusCode).toBe(200);
+
+    const data = res._getJSONData();
+
+    expect(data.message).toBe("success!");
+    expect(data.tasksDeleted).toBe(3);
+    expect(data.totalRequested).toBe(3);
+  });
+
+  it("b.should return 400 when taskIds is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: { taskIds: [] },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkDelete, req, res);
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("c.should NOT delete tasks of another user even if ids are passed", async () => {
+    const foreignTask = await prisma.Task.create({
+      data: { title: "foreign", userId: user2.id },
+    });
+
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: {
+        taskIds: [foreignTask.id],
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkDelete, req, res);
+
+    expect(res.statusCode).toBe(200);
+
+    const stillExists = await prisma.Task.findUnique({
+      where: { id: foreignTask.id },
+    });
+
+    expect(stillExists).not.toBeNull();
   });
 });
 
-describe("Testing Update Multiple Tasks", () => {
-  it("a.should update multiple tasks", async () => {
-    const req = httpMocks.createRequest({
-      method: "PATCH",
-      body: {
-        taskIds: [1, 2, 3],
-      },
+describe("Bulk Update Tasks ", () => {
+  let task1, task2, task3;
+  beforeEach(async () => {
+    task1 = await prisma.Task.create({
+      data: { title: "task1", userId: user1.id },
     });
-    req.user = {
-      id: 1,
-    };
 
-    saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
-    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, saveRes);
-    expect(saveRes.statusCode).toBe(200);
+    task2 = await prisma.Task.create({
+      data: { title: "task2", userId: user1.id },
+    });
+
+    task3 = await prisma.Task.create({
+      data: { title: "task3", userId: user1.id },
+    });
   });
 
-  it("b.should return 400 when taskIds is missing", async () => {
+  it("a.should update multiple tasks using valid taskIds", async () => {
     const req = httpMocks.createRequest({
       method: "PATCH",
       body: {
-        taskIds: [],
+        taskIds: [task1.id, task2.id, task3.id],
       },
     });
-    req.user = {
-      id: 1,
-    };
-    req.body = { isCompleted: true };
-    saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
-    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, saveRes);
-    expect(saveRes.statusCode).toBe(400);
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, res);
+
+    expect(res.statusCode).toBe(200);
+
+    const data = res._getJSONData();
+
+    expect(data.message).toBe("success!");
+    expect(data.tasksUpdated).toBe(3);
+    expect(data.totalRequested).toBe(3);
+  });
+
+  it("b.should return 400 when taskIds is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: { taskIds: [] },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, res);
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("c.should NOT update other user's tasks even if ids are passed", async () => {
+    const foreignTask = await prisma.Task.create({
+      data: { title: "foreign", isCompleted: false, userId: user2.id },
+    });
+
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: {
+        taskIds: [foreignTask.id],
+        isCompleted: true,
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, res);
+
+    expect(res.statusCode).toBe(200);
+    const unchangedTask = await prisma.Task.findUnique({
+      where: { id: foreignTask.id },
+    });
+
+    expect(unchangedTask.isCompleted).toBe(false);
   });
 });
-
 afterAll(() => {
   prisma.$disconnect();
 });
