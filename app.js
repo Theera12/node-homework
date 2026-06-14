@@ -5,6 +5,7 @@ const taskRouter = require("./routes/taskRoutes");
 const analyticsRouter = require("./routes/analyticsRoutes");
 const prisma = require("./db/prisma");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
 app.set("trust proxy", 1);
 const helmet = require("helmet");
@@ -19,6 +20,7 @@ app.use(
 );
 
 app.use(helmet());
+app.use(cors());
 
 app.use(cookieParser());
 
@@ -31,7 +33,7 @@ app.use((req, res, next) => {
 });
 
 //middleware to get the body of post request
-app.use(express.json({ limit: "1kb" }));
+app.use(express.json({ limit: "1mb" }));
 
 app.use(xss());
 
