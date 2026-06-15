@@ -67,7 +67,7 @@ describe("testing logon, register, and logoff", () => {
     });
     saveRes = MockResponseWithCookies();
     await waitForRouteHandlerCompletion(logon, req, saveRes);
-    expect(saveRes.statusCode).toBe(200); // success!
+    expect(saveRes.statusCode).toBe(200);
   });
 
   it("35. A string in the Set-Cookie array starts with jwt=.", () => {

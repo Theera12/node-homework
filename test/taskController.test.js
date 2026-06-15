@@ -1,5 +1,5 @@
 require("dotenv").config();
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL; // point to the test database!
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 const prisma = require("../db/prisma");
 const httpMocks = require("node-mocks-http");
 const waitForRouteHandlerCompletion = require("./waitForRouteHandlerCompletion");
@@ -292,7 +292,7 @@ describe("Bulk Delete Tasks ", () => {
     const req = httpMocks.createRequest({
       method: "DELETE",
       body: {
-        taskIds: [task1.id, task2.id, task3.id], // ✅ real ids
+        taskIds: [task1.id, task2.id, task3.id],
       },
     });
 

@@ -19,11 +19,10 @@ const cookieFlags = (req) => {
 };
 
 const setJwtCookie = (req, res, user) => {
-  //console.log(req, res, user);
   // Sign JWT
   const payload = { id: user.id, csrfToken: randomUUID() };
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" }); // 1 hour expiration
-  // Set cookie.  Note that the cookie flags have to be different in production and in test.
+  // Set cookie.
   res.cookie("jwt", token, { ...cookieFlags(req), maxAge: 3600000 }); // 1 hour expiration
   return payload.csrfToken; // this is needed in the body returned by logon() or register()
 };
@@ -77,7 +76,7 @@ const googleLogon = async (req, res, next) => {
     });
     if (!user) {
       const result = await prisma.$transaction(async (tx) => {
-        // Create user account (similar to Assignment 6, but using tx instead of prisma)
+        // Create user account
         const newUser = await tx.user.create({
           data: { email, name, hashedPassword: "hashedGoogleUser" },
           select: { id: true, email: true, name: true, createdAt: true },
@@ -147,7 +146,6 @@ const register = async (req, res, next) => {
     params.append("response", token);
     params.append("remoteip", req.ip);
     const response = await fetch(
-      // might throw an error that would cause a 500 from the error handler
       "https://www.google.com/recaptcha/api/siteverify",
       {
         method: "POST",
@@ -164,7 +162,6 @@ const register = async (req, res, next) => {
     process.env.RECAPTCHA_BYPASS &&
     req.get("X-Recaptcha-Test") === process.env.RECAPTCHA_BYPASS
   ) {
-    // might be a test environment
     isPerson = true;
   }
 
@@ -188,10 +185,9 @@ const register = async (req, res, next) => {
   value.hashedPassword = await hashPassword(value.password);
   delete value.password;
   const { name, email, hashedPassword } = value;
-  // the code to here is like the in-memory version
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Create user account (similar to Assignment 6, but using tx instead of prisma)
+      // Create user account
       const newUser = await tx.user.create({
         data: { email, name, hashedPassword },
         select: { id: true, email: true, name: true, createdAt: true },
@@ -241,7 +237,6 @@ const register = async (req, res, next) => {
   } catch (err) {
     console.log("REGISTER ERROR:", err);
     if (err.code === "P2002") {
-      // send the appropriate error back -- the email was already registered
       return res.status(400).json({ error: "Email already registered" });
     }
     return next(err);
@@ -288,10 +283,8 @@ const logon = async (req, res) => {
 
   let { email, password } = req.body;
 
-  email = email.toLowerCase(); // Joi validation always converts the email to lower case
-  // but you don't want logon to fail if the user types mixed case
+  email = email.toLowerCase();
   const user = await prisma.user.findUnique({ where: { email } });
-  // also Prisma findUnique can't do a case insensitive search
 
   if (!user) {
     return res
@@ -307,8 +300,6 @@ const logon = async (req, res) => {
       .json({ message: "Authentication Failed" });
   }
   const csrfToken = setJwtCookie(req, res, user);
-  //global.user_id = null;
-  //global.user_id = user.id;
 
   return res
     .status(StatusCodes.OK)
@@ -317,7 +308,6 @@ const logon = async (req, res) => {
 
 //logoff the user
 const logoff = (req, res) => {
-  //global.user_id = null;
   res.clearCookie("jwt", cookieFlags(req));
   res.sendStatus(StatusCodes.OK);
 };
