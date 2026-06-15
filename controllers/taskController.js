@@ -194,7 +194,7 @@ const update = async (req, res, next) => {
 
 //Bulk task operation
 const bulkCreate = async (req, res, next) => {
-  const tasks  = req.body;
+  const { tasks } = req.body;
 
   // Validate the tasks array
   if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
