@@ -46,7 +46,7 @@ const getUserAnalytics = async (req, res) => {
   });
 
   // Calculate weekly progress using groupBy
-  const oneWeekAgo = new Date(Date.now()); // ... you need to calculate this
+  const oneWeekAgo = new Date(Date.now());
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
   // Then use groupBy with a where clause filtering by createdAt >= oneWeekAgo
   const weeklyProgress = await prisma.task.groupBy({
@@ -165,9 +165,7 @@ const searchTasks = async (req, res) => {
 `;
 
   // Return results with query and count
-  // Hint: The test expects results array, query string, and count number
   res.status(200).json({
-    // ... you need to return the response object
     results: searchResults,
     query: searchQuery,
     count: searchResults.length,

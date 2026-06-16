@@ -16,7 +16,7 @@ beforeAll(async () => {
 });
 
 describe("register a user ", () => {
-  let saveRes = null; // we'll declare this out here, so that we can reference it in several tests
+  let saveRes = null;
   it("46. it creates the user entry", async () => {
     const newUser = {
       name: "John Deere",

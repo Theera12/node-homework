@@ -237,6 +237,60 @@ const bulkCreate = async (req, res, next) => {
     return next(err);
   }
 };
+
+//deleteMany tasks
+const bulkDelete = async (req, res, next) => {
+  const { taskIds } = req.body;
+
+  // Validate the tasks array
+  if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+    return res.status(400).json({
+      error: "Invalid request data. Expected an array of tasks ids.",
+    });
+  }
+  try {
+    const result = await prisma.task.deleteMany({
+      where: {
+        id: { in: taskIds },
+        userId: req.user.id,
+      },
+    });
+
+    return res.status(StatusCodes.OK).json({
+      message: "success!",
+      tasksDeleted: result.count,
+      totalRequested: taskIds.length,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+//bulkUpdate tasks
+const bulkUpdateWithIds = async (req, res, next) => {
+  const { taskIds } = req.body;
+  // Validate the tasks array
+  if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+    return res.status(400).json({
+      error: "Invalid request data. Expected an array of tasks ids.",
+    });
+  }
+  try {
+    const result = await prisma.task.updateMany({
+      where: {
+        id: { in: taskIds },
+        userId: req.user.id,
+      },
+      data: { isCompleted: true, priority: "Low" },
+    });
+    return res.status(StatusCodes.OK).json({
+      message: "success!",
+      tasksUpdated: result.count,
+      totalRequested: taskIds.length,
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
 //delete a task
 const deleteTask = async (req, res, next) => {
   const id = parseInt(req.params.id);
@@ -264,7 +318,10 @@ module.exports = {
   create,
   index,
   show,
+  bulkCreate,
+  bulkDelete,
   update,
   bulkCreate,
+  bulkUpdateWithIds,
   deleteTask,
 };

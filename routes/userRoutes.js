@@ -7,9 +7,11 @@ const {
   show,
   logon,
   logoff,
+  googleLogon,
 } = require("../controllers/userController");
 
 router.route("/register").post(register);
+router.route("/googleLogon").post(googleLogon);
 router.route("/logon").post(logon);
 router.route("/:id").get(show);
 router.use(jwtMiddleware);

@@ -1,1 +1,60 @@
-https://node-homework-909.onrender.com/
+# DEPLOYED BACKEND LINK 
+ https://node-homework-909.onrender.com/
+
+#EXTRA FEATURES ADDED
+
+***************
+1. GOOGLE LOGON
+***************
+- Local Route (API Endpoint): http://localhost:3000/api/users/googleLogon
+- Route with Deployed Backend (API Endpoint):  https://node-homework-909.onrender.com/api/users/googleLogon
+- Update the .env file with 
+GOOGLE_CLIENT_ID =your_goole_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3001
+- Run Frontend : npm run dev
+- Click on 'Logon With Google' button on front end http://localhost:3001/
+- Click on google account and click continue
+- App redirects us to the task page if the account excists or create the user if the user doesn't excist.
+
+***************
+2. BULK UPDATE
+***************
+Postmon Testing
+---------------
+- Login to a excisting user
+- Local Route (API Endpoint): http://localhost:3000/api/tasks/bulkUpdateWithIds
+- Route with Deployed Backend (API Endpoint):  https://node-homework-909.onrender.com/api/tasks/bulkUpdateWithIds
+- Method : PATCH
+- Header :: X-CSRF-TOKEN : {{csrftoken}}
+- Body : {"taskIds":[22,34]}
+(Make sure the ids in the body excists in the created tasks)
+- click send
+- Response is generated with message : success , Task Updated :2 , Total Requested : 2
+
+------------
+Jest Testing
+------------
+npx jest test/taskController.test.js
+
+**************
+3. BULK DELETE
+**************
+Postmon Testing
+---------------
+- Login to the excisting user
+- Local Route (API Endpoint): http://localhost:3000/api/tasks/bulkDelete
+- Route with Deployed Backend (API Endpoint):  https://node-homework-909.onrender.com/api/tasks/bulkDelete
+- Method : DELETE
+- Header :: X-CSRF-TOKEN : {{csrftoken}}
+- Body : {"taskIds":[22,34]}
+(Make sure the ids in the body excists in the created tasks)
+- click send
+- Response is generated with message : success , Task Deleted :2 , Total Requested : 2
+
+------------
+Jest Testing
+------------
+npx jest test/taskController.test.js
+
+

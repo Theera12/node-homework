@@ -1,5 +1,5 @@
 require("dotenv").config();
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL; // point to the test database!
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 const prisma = require("../db/prisma");
 const httpMocks = require("node-mocks-http");
 const waitForRouteHandlerCompletion = require("./waitForRouteHandlerCompletion");
@@ -10,6 +10,9 @@ const {
   create,
   update,
   deleteTask,
+  bulkCreate,
+  bulkDelete,
+  bulkUpdateWithIds,
 } = require("../controllers/taskController");
 
 // a few useful globals
@@ -225,6 +228,223 @@ describe("testing the update and delete of tasks", () => {
     saveRes = httpMocks.createResponse({ eventEmitter: EventEmitter });
     await waitForRouteHandlerCompletion(index, req, saveRes);
     expect(saveRes.statusCode).toBe(404);
+  });
+});
+
+describe("Bulk Create Tasks", () => {
+  it("a.should create multiple tasks for a valid user", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: {
+        tasks: [{ title: "task A" }, { title: "task B" }, { title: "task C" }],
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+
+    await waitForRouteHandlerCompletion(bulkCreate, req, res);
+
+    expect(res.statusCode).toBe(201);
+
+    const data = res._getJSONData();
+
+    expect(data.message).toBe("success!");
+    expect(data.tasksCreated).toBe(3);
+    expect(data.totalRequested).toBe(3);
+  });
+
+  it("b.should return 400 if tasks array is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { tasks: [] },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+
+    await waitForRouteHandlerCompletion(bulkCreate, req, res);
+
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("Bulk Delete Tasks ", () => {
+  let task1, task2, task3;
+
+  beforeEach(async () => {
+    task1 = await prisma.Task.create({
+      data: { title: "task1", userId: user1.id },
+    });
+
+    task2 = await prisma.Task.create({
+      data: { title: "task2", userId: user1.id },
+    });
+
+    task3 = await prisma.Task.create({
+      data: { title: "task3", userId: user1.id },
+    });
+  });
+
+  it("a.should delete multiple tasks using valid taskIds", async () => {
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: {
+        taskIds: [task1.id, task2.id, task3.id],
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkDelete, req, res);
+
+    expect(res.statusCode).toBe(200);
+
+    const data = res._getJSONData();
+
+    expect(data.message).toBe("success!");
+    expect(data.tasksDeleted).toBe(3);
+    expect(data.totalRequested).toBe(3);
+  });
+
+  it("b.should return 400 when taskIds is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: { taskIds: [] },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkDelete, req, res);
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("c.should NOT delete tasks of another user even if ids are passed", async () => {
+    const foreignTask = await prisma.Task.create({
+      data: { title: "foreign", userId: user2.id },
+    });
+
+    const req = httpMocks.createRequest({
+      method: "DELETE",
+      body: {
+        taskIds: [foreignTask.id],
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkDelete, req, res);
+
+    expect(res.statusCode).toBe(200);
+
+    const stillExists = await prisma.Task.findUnique({
+      where: { id: foreignTask.id },
+    });
+
+    expect(stillExists).not.toBeNull();
+  });
+});
+
+describe("Bulk Update Tasks ", () => {
+  let task1, task2, task3;
+  beforeEach(async () => {
+    task1 = await prisma.Task.create({
+      data: { title: "task1", userId: user1.id },
+    });
+
+    task2 = await prisma.Task.create({
+      data: { title: "task2", userId: user1.id },
+    });
+
+    task3 = await prisma.Task.create({
+      data: { title: "task3", userId: user1.id },
+    });
+  });
+
+  it("a.should update multiple tasks using valid taskIds", async () => {
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: {
+        taskIds: [task1.id, task2.id, task3.id],
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, res);
+
+    expect(res.statusCode).toBe(200);
+
+    const data = res._getJSONData();
+
+    expect(data.message).toBe("success!");
+    expect(data.tasksUpdated).toBe(3);
+    expect(data.totalRequested).toBe(3);
+  });
+
+  it("b.should return 400 when taskIds is empty", async () => {
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: { taskIds: [] },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, res);
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("c.should NOT update other user's tasks even if ids are passed", async () => {
+    const foreignTask = await prisma.Task.create({
+      data: { title: "foreign", isCompleted: false, userId: user2.id },
+    });
+
+    const req = httpMocks.createRequest({
+      method: "PATCH",
+      body: {
+        taskIds: [foreignTask.id],
+        isCompleted: true,
+      },
+    });
+
+    req.user = { id: user1.id };
+
+    const res = httpMocks.createResponse({
+      eventEmitter: EventEmitter,
+    });
+
+    await waitForRouteHandlerCompletion(bulkUpdateWithIds, req, res);
+
+    expect(res.statusCode).toBe(200);
+    const unchangedTask = await prisma.Task.findUnique({
+      where: { id: foreignTask.id },
+    });
+
+    expect(unchangedTask.isCompleted).toBe(false);
   });
 });
 afterAll(() => {

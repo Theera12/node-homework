@@ -1,316 +1,191 @@
-# Getting Started with Node Development
+# TASK MANAGEMENT APP
 
-Welcome to Code the Dream’s Node/Express class! You will be learning Node.js, an implementation of the JavaScript engine that runs standalone or as a web server. This page describes how to begin. You can develop Node applications on MacOS, Linux, or Windows. If you are developing on Windows, there is no need to do development in a virtual machine, as Node development works fine in Windows native environments, but you can use the Windows Subsystem for Linux if you prefer. You will need to install:
+Task Management App is a full stack application built with React, Node Js, Express Js and Prisma. This app facilitate the users to register, login securely to the application. Users can perform create ,update, delete and organize tasks with authentication and secure API's. Additionally, the application supports Google login, allowing users to authenticate securely using their Google accounts.
 
-- Git
-- Node
-- Postman
-- Postgresql
-- The `node-homework` git repository
+## FEATURES
 
-## Git
+- Register and Login Users
+- User authentication (JWT + coookies)
+- Google Logon using google Oauth2.0
+- Create, update, delete tasks
+- Bulk Create, Bulk Update, Bulk Delete tasks
+- Pagination Support
+- Analytical User Task Support
+- Secure API with middleware validation
+- Schema validation using JOI
+- Data Management using Prisma
+- Testing using Jest
 
-The git program is typically already present on MacOS and Linux. You can run
+## TECH STACK
 
-```
-git --version
-```
+Frontend:
 
-to see if it is installed. On Windows, you should install Git for Windows, if you haven’t already. It is available [here.](https://gitforwindows.org/) You will also need an editor. For JavaScript development the VSCode editor is strongly recommended. Finally, you will need to install Node and the Node Package Manager npm. That package is available [here](https://nodejs.org/en/download/). You should install the latest LTS (Long Term Support) version. The other package you need is called Postman. In this class, you create REST APIs. You may have no front end for those APIs, so you need to test them with Postman. The Postman package is available [here](https://www.postman.com/downloads/).
+- React
+- Vite
 
-## Node
+Backend:
 
-For Windows and Mac, the installer for Node is available [here](https://nodejs.org/en/download/).
+- Node.js
+- Express.js
 
-For Linux, you enter the following commands:
+Database:
 
-```bash
-sudo apt update
-sudo apt install nodejs
-sudo apt install npm
-```
+- PostgreSQL
+- Prisma ORM
 
-**Verify Node.js and npm installation:**
+Testing:
 
-```bash
-node --version
-npm --version
-```
+- Jest
 
-You should see version numbers for both tools.
+Validation:
 
-## PostgreSQL
+- JOI
 
-You will learn and use the SQL language for relational database access in this course. The SQL database we use is called PostgreSQL. The steps needed to install and configure this package are a little different depending on the platform.
+## PROJECT STRUCTURE
 
-<details>
-<summary style="font-size: 1.3em;">Postgresql on Mac</summary>
-
-Enter the following commands in a terminal session. The `<username>` you use is your Mac username, that is, the value returned by the whoami command.
-
-```bash
-brew update
-brew install postgresql@14
-brew services start postgresql@14
-psql -U postgres
-CREATE ROLE <username> LOGIN CREATEDB;
-CREATE DATABASE nodehomework OWNER <username>;
-CREATE DATABASE tasklist OWNER <username>;
-CREATE DATABASE testtasklist OWNER <username>;
-\q
-```
-
-**Verify PostgreSQL installation:**
-
-```bash
-psql --version
-```
-
-You should see a version number like `psql (PostgreSQL) 14.x`.
-
-</details>
-
-<details>
-<summary style="font-size: 1.3em;">Postgresql on Windows</summary>
-
-To install PostgreSQL, you will need to assign a password for PostgreSQL itself (called the superuser with user ID "_postgres_"). Think of one and write it down. After installation, you will also create another user ID called _`mypguser`_ with its own password. This _`mypguser`_ will be used for database access. Think of a password for _`mypguser`_ and write it down. Of course, don't reuse existing password.
-
-The installer for PostgreSQL for Windows is [here](https://www.postgresql.org/download/windows). Run the install program, accepting all default values. You can watch [this](https://youtu.be/GpqJzWCcQXY?si=2ebcJ6FqmGkLChJL) video from 0:00 - 6:00 to make sure the application is installed correctly.
-
-Once the installation is complete, open the Windows Services panel (_Task Manager_) and verify that the Postgresql service is running. Then open a **`cmd`** prompt (**not Git Bash**) and type the following command, then press "Enter".
-
-**Note**: You need to check your installed **PostgreSQL version**. The command below uses PostgreSQL version **17**.
+| Folder         | Purpose                                            |
+| -------------- | -------------------------------------------------- |
+| `controllers/` | Logic for API endpoints                            |
+| `routes/`      | Application routes                                 |
+| `middleware/`  | Authentication, JWT validation, and error handling |
+| `schemas/`     | Joi validation schemas                             |
+| `prisma/`      | Database schema and migrations                     |
+| `tests/`       | test cases using jest                              |
+| `tdd/`         | test cases using jest for all weekly assignments   |
+| `validation/`  | schema validation using JOI                        |
 
 ```
-"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost
-```
-
-After running this command, you will be prompted to enter your PostgreSQL password (the one you created during installation for the **postgres superuser**). When you type the password, you won't see any characters appear on screen (not even asterisks \*\*\*\*). This is normal for security reasons. Just type it and press Enter.
-If the connection is successful, you'll see:
 
 ```
-psql (17.x)
-Type "help" for help
-postgres=#
-```
 
-This means you're now connected to PostgreSQL! Next, you will need to run a series of PostgreSQL SQL commands that you need to run to set up your database environment.
+## INSTALLATION & SETUP
 
-**Note**: You need to run each command, one at a time, pressing Enter after each one. **Remember** to replace `<pg-password>` with your actual password what you would like to have for _`mypguser`_ before running the first command! SQL commands are typically terminated by a semicolon (;) and strings are enclosed in single quotes '...'
+### 1. Clone the repo
 
-```
-CREATE ROLE mypguser LOGIN CREATEDB PASSWORD '<pg-password>';
-CREATE DATABASE nodehomework OWNER mypguser;
-CREATE DATABASE tasklist OWNER mypguser;
-CREATE DATABASE testtasklist OWNER mypguser;
-\q
-```
+Backend:
+git clone https://github.com/Theera12/node-homework
 
-</details>
+### 2. Install dependencies
 
-<details>
-<summary style="font-size: 1.3em;">Postgresql on Linux</summary>
-
-On Linux (or WSL) Postgres is installed as follows. The `<username>` is your Linux username, whatever whoami returns.
-
-```bash
-sudo apt update
-sudo apt install postgresql
-sudo service posgresql start
-sudo -su postgres psql
-CREATE DATABASE nodehomework OWNER <username>;
-CREATE DATABASE tasklist OWNER <username>;
-CREATE DATABASE testtasklist OWNER <username>;
-CREATE ROLE <username> LOGIN CREATEDB;
-\q
-```
-
-</details>
-
-### The PostgreSQL Service
-
-The steps above won't ensure that the Postgresql service always starts on Mac or Linux. If you reboot, it won't automatically start. This could be fixed, but you don't need it running all the time. You only need it when working on a Node assignment that uses the database, but you will get error messages if you don't start the service when working on those lessons.
-
-The installation procedure for Windows makes the Postgresql service start automatically. You could change this to manual in the services panel, starting the service from that panel when you need it. You don't want your boot times to get longer.
-
-## Additional Steps for Windows
-
-A few additional steps are recommended when setting up a Windows machine for Node development. When you install Git for Windows, you get a terminal shell program called Git Bash. This is the terminal environment you should use for Node development. Do not use cmd.exe or PowerShell, as these terminal environments work differently. With Git Bash, your terminal will work like the Linux or MacOS terminals, so you can enter the same commands as the students with Linux or MacOS. It helps to have some basic understanding of these shell commands: cd, ls, mkdir, touch, pwd. If you are not familiar with these, there is a tutorial [here](https://ubuntu.com/tutorials/command-line-for-beginners#1-overview). You should always start a Git Bash session to issue git, node, or npm commands. You should also configure git to handle line endings in the Linux way, via these commands:
-
-```
-git config --global core.eol lf
-git config --global core.autocrlf input
-```
-
-You should also configure npm to integrate with Git Bash. This is done with the following command:
-
-```
-npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
-```
-
-You should also configure VSCode to handle line ends as Linux does, and to use Git Bash as the terminal shell. Start VSCode from your Git Bash session by typing
-
-```
-code .
-```
-
-You can then bring up the settings for VSCode by pressing **Ctrl,** (the ctrl key plus the comma). The settings has a _Search settings_ entry field. Type _'line end'_ in that entry field. You will then be able to set the Eol to /n which is what you want. Then do a Search settings for: _'terminal integrated default profile windows'_. This brings up a dropdown, from which you should choose Git Bash. That completes Windows specific setup.
-
-## The `node-homework` Repository
-
-All of your homework, including the class final project, will be created in this repository. You should install it now. There are also some configuration steps.
-
-Create a repository called `node-homework` in your online github account. This repository should be created as public, without a _README_, _gitignore_, or _license file_. **Do not fork** the `node-homework` repository from Code the Dream. Copy the URL for your new repository to your clipboard.
-
-Within a terminal session on your laptop( or PC), open the folder where you want to keep your code, and do:
-
-```bash
-    git clone https://github.com/Code-the-Dream-School/node-homework
-```
-
-Then, switch to the `node-homework` directory that you have just cloned, and within the terminal, enter the following commands:
-
-```bash
-git remote set-url origin <URL> # This is the URL of the repository you created.
-git remote add upstream https://github.com/Code-the-Dream-School/node-homework
-git push origin main
+Backend:
 npm install
-```
 
-You are populating your own repository with the contents of Code the Dream School repository. You do it this way, instead of creating a fork, because you want the default target for your homework pull requests to be your own repository. The `npm install` gives you the packages you need to run the homework programs.
+### 1. Clone the repo
 
-Once in a while, it may be necessary to get updates from Code the Dream for some code that's included with this repository. That is the purpose of the upstream remote. If this happens, a mentor will post instructions on how to pull down the update or you'd do the following:
+Frontend:
+git clone https://github.com/Code-the-Dream-School/node-essentials-front-end
 
-```bash
-git checkout main
-git pull upstream main
-```
+### 2. Install dependencies
 
-You may have an assignment branch active when these updates are needed. So then you'd do:
+Frontend:
+npm install
 
-```bash
-git checkout main
-git pull upstream main
-git checkout assignmentx # the branch you were working in
-git merge main
-```
+## ENVIRONMENT VARIABLE
 
-If you have uncommitted changes in your working branch, the `git checkout main` may give an error message. So then you'd do:
+### Create a `.env` file in the BACKEND folder:
 
-```bash
-git stash
-git checkout main
-git pull upstream main
-git checkout assignmentx # the branch you were working in
-git merge main
-git stash apply
-```
+DATABASE_URL=your_postgres_url
+JWT_SECRET=your_secret
+RECAPTCHA_SECRET=your_secret
+RECAPTCHA_BYPASS=your_bypass
+GOOGLE_CLIENT_ID =your_google_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3001
 
-This procedure should be infrequent -- only when changes are made to the course.
+### Create a `.env` file in the Frontend folder:
 
-Last thing, you need to create a _**.env**_ file in the root of the `node-homework` folder. The format of this file depends on your operating system.
+VITE_BASE_URL=""
+VITE_TARGET="http://localhost:3000"
+#VITE_TARGET="https://node-homework-909.onrender.com"
+VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
+VITE_GOOGLE_CLIENT_ID =your_google_client_id
 
-<details>
-<summary>The .env file for the Mac</summary>
+Note: All credentials should be generated from the user end and to be updated the .env file to run the application locally.
 
-```
-DB_URL=postgresql://<username>@localhost/nodehomework?host=/tmp
-DATABASE_URL=postgresql://<username>@localhost/tasklist?host=/tmp
-TEST_DATABASE_URL=postgresql://<username>@localhost/testtasklist?host=/tmp
-```
+## RUN THE PROJECT LOCALLY
 
-</details>
+Backend:
+npm run dev
 
-<details>
-<summary>The .env file for Windows</summary>
+Frontend:
+npm run dev
 
-You use the password you created for the `mypguser` PostgreSQL user, substituting that for `<pg-password>` below.
+## API Endpoints
 
-```
-DB_URL=postgresql://mypguser:<pg-password>@localhost/nodehomework
-DATABASE_URL=postgresql://mypguser:<pg-password>@localhost/tasklist
-TEST_DATABASE_URL=postgresql://mypguser:<pg-password>@localhost/testtasklist
-```
+### User Authentication
 
-</details>
+POST /api/users/register  
+POST /api/users/login  
+POST /api/users/googleLogon  
+GET /api/users/:id
+POST /api/users/logoff
 
-<details>
-<summary>The .env file for Linux</summary>
+### Tasks
 
-```
-DB_URL=postgresql://<username>@localhost/nodehomework?host=/var/run/postgresql
-DATABASE_URL=postgresql://<username>@localhost/tasklist?host=/var/run/postgresql
-TEST_DATABASE_URL=postgresql://<username>@localhost/testtasklist?host=/var/run/postgresql
-```
+GET /api/tasks?sortBy=title&sortDirection=asc  
+POST /api/tasks  
+PATCH /api/tasks/:id  
+GET /api/tasks/:id  
+DELETE /api/tasks/:id
 
-</details>
+### Bulk
 
-## Validating Your `node-homework` Configuration
+POST/api/tasks/bulk
+PATCH /api/tasks/bulkDelete
+DELETE /api/tasks/bulkUpdateWithIds
 
-From your `node-homework` folder, run the following:
+### ANALYTICS
 
-```bash
-node load-db
-```
+GET/api/users/:id
+GET/api/users
+GET/api/tasks/search
 
-You should see messages that tables have been loaded. If this doesn't work, ask a mentor or another student for help. Remember that the PostgreSQL service must be running when you do this command.
+## SECURITY FEATURES
 
-### What is the `load-db.js` file?
+- HTTP-only cookies for JWT
+- CSRF protection using tokens
+- Input validation using Joi
+- Rate limiting & Helmet security headers
 
-The `load-db.js` file is a **database setup script** that:
+## TESTING
 
-- **Creates 5 database tables**: _customers_, _employees_, _products_, _orders_, and _line_items_
-- **Loads sample data** from CSV files in a `./csv/` folder
-- **Sets up relationships** between tables (foreign keys)
-- **Validates your database connection** is working
+npm run test
 
-When you run `node load-db`, it builds a complete business database system that you'll use for your assignments. Make sure PostgreSQL is running and the `./csv/` folder exists with the required data files.
+## API Testing (Postman)
 
-**Note:** You can see these 5 database tables by using _pgAdmin 4_ (the desktop GUI application for managing and developing PostgreSQL databases, provided when you install PostgreSQL) following:
+All backend APIs were tested using Postman.
 
-    pgAdmin 4 => Servers => PostgreSQL 17 => Databases => notehomework => Schemas => public => Tables
+### Authentication
 
-## Your Assignments
+![Register API](./screenshots/Register.png)
+![Login API](./screenshots/Login.png)
 
-Each of your assignments will be created in the `node-homework` directory. Before you start work on the assignment, you create a git branch for it. For example, for the week 1 assignment, you would change to the `node-homework` directory and enter the command
+### Task Operations
 
-```
-git checkout -b assignment1
-```
+![Index](./screenshots/Task Index.png)
+![Create](./screenshots/Task Create.png)
 
-Then, from the `node-homework` folder type `code .` to bring up VSCode for that directory. It is a good idea to do git add and commit operations several times as you work on an assignment, whenever your code is stable. You give each commit a meaningful message so that you know how far you got.
+### Bulk Operations
 
-When you have finished the week’s assignment, you push it to github as follows:
+![BulkUpdate](./screenshots/Bulk Update.png)
+![BulkDelete](./screenshots/Bulk Delete.png)
 
-```
-git status
-git add -A
-git commit -m "Completion of week 1 assignment"
-git push origin assignment1
-```
+### Analytics
 
-You then go to github and open your `node-homework` repository. You create a pull request. Open the assignment submission form for the class. Include a link to your pull request in that form. **Do not merge the pull request until your reviewer approves it.** Each assignment should be developed in its own feature branch, created from the latest version of the main branch. This keeps your work isolated and avoids carrying over unfinished code from earlier assignments.
-Before creating a new branch, make sure your local `main` branch is up to date:
+![Analytics](./screenshots/Analytics)
 
-```bash
-git checkout main
-git pull origin main
-git checkout -b assignment2
-```
+## DEPLOYMENT
 
-## The `node-homework` Project Structure
+Backend: Render  
+Deployed Backend: https://node-homework-909.onrender.com/
+Database: Neon
 
-- `assignment1/`, `assignment2/`, ...: Folders for assignments or parts of assignments that are not part of the final project.
-- `tdd/`: All TDD for homework assignments.
-- `tests/`: For assignment9 on testing.
-- `project-links.txt`: Record links to PRs for the React repository and URLs of deployed React and Node apps. You won't need this until lesson 10.
-- Usual Express files (e.g., `app.js`, `routes/`, `controllers/`, `utils/`, `models/`, `tests/`, etc.) will be present in the root or as needed for the Node/Express app.
-- `package.json`: Single package file for the whole project.
-- The repository is structured for cloud deployment.
+## CREDITS
 
-## Good Luck With the Class, and Happy Coding!
+This project was built as part of the Code the Dream (CTD) training program.  
+I would like to thank CTD for their mentorship, curriculum, and support in helping me build full-stack development skills.
 
-## License
+## AUTHOR
 
-Copyright (c) 2025 Code the Dream
-This project is licensed under the MIT License – see the [LICENSE](./LICENSE) file for details.
+Aarthy Mayakrishnan
+GitHub: https://github.com/Theera12
