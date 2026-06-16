@@ -6,8 +6,8 @@
 ***************
 1. GOOGLE LOGON
 ***************
-- Local Route : http://localhost:3000/api/users/googleLogon
-- Route with Deployed Backend :  https://node-homework-909.onrender.com/api/users/googleLogon
+- Local Route (API Endpoint): http://localhost:3000/api/users/googleLogon
+- Route with Deployed Backend (API Endpoint):  https://node-homework-909.onrender.com/api/users/googleLogon
 - Update the .env file with 
 GOOGLE_CLIENT_ID =your_goole_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
@@ -23,8 +23,8 @@ GOOGLE_REDIRECT_URI=http://localhost:3001
 Postmon Testing
 ---------------
 - Login to a excisting user
-- Local Route : http://localhost:3000/api/tasks/bulkUpdateWithIds
-- Route with Deployed Backend :  https://node-homework-909.onrender.com/api/tasks/bulkUpdateWithIds
+- Local Route (API Endpoint): http://localhost:3000/api/tasks/bulkUpdateWithIds
+- Route with Deployed Backend (API Endpoint):  https://node-homework-909.onrender.com/api/tasks/bulkUpdateWithIds
 - Method : PATCH
 - Header :: X-CSRF-TOKEN : {{csrftoken}}
 - Body : {"taskIds":[22,34]}
@@ -43,8 +43,8 @@ npx jest test/taskController.test.js
 Postmon Testing
 ---------------
 - Login to the excisting user
-- Local Route : http://localhost:3000/api/tasks/bulkDelete
-- Route with Deployed Backend :  https://node-homework-909.onrender.com/api/tasks/bulkDelete
+- Local Route (API Endpoint): http://localhost:3000/api/tasks/bulkDelete
+- Route with Deployed Backend (API Endpoint):  https://node-homework-909.onrender.com/api/tasks/bulkDelete
 - Method : DELETE
 - Header :: X-CSRF-TOKEN : {{csrftoken}}
 - Body : {"taskIds":[22,34]}
