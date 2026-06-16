@@ -100,6 +100,8 @@ VITE_TARGET="http://localhost:3000"
 VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
 VITE_GOOGLE_CLIENT_ID =your_google_client_id
 
+Note: All credentials should be generated from the user end and to be updated the .env file to run the application locally.
+
 ## RUN THE PROJECT LOCALLY
 
 Backend:
